@@ -18,13 +18,10 @@ app = FastAPI(
     version="0.1.0",
     docs_url=f"{BASE_URL}/docs",
     redoc_url=f"{BASE_URL}/redoc",
-    openapi_url=f"{BASE_URL}/openapi.json"
+    openapi_url=f"{BASE_URL}/openapi.json",
 )
 
-router_v1_auth = APIRouter(
-    tags=["v1 Auth"],
-    prefix="/v1/auth"
-)
+router_v1_auth = APIRouter(tags=["v1 Auth"], prefix="/v1/auth")
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,7 +35,8 @@ app.add_middleware(
 # 定数
 SECRET_KEY = "mysecretkey"
 ALGORITHM = "HS256"
-MASTER_KEY = "master_key"
+MASTER_TOKEN = "master_token"
+
 
 # エラーコード
 class ErrorCode(str, Enum):
@@ -46,22 +44,27 @@ class ErrorCode(str, Enum):
     TOKEN_EXPIRED = "AUTH002"
     INVALID_MASTER_KEY = "AUTH003"
 
+
 # モデル
 class TokenRequest(BaseModel):
-    expire_minutes: Optional[int] = 60
+    expire_hours: Optional[int] = 8760
     username: str = "user"
+
 
 class TokenDecodeRequest(BaseModel):
     token: str
+
 
 class ErrorModel(BaseModel):
     code: str
     message: str
     field: str = ""
 
+
 class ResponseModel(BaseModel):
     data: dict = {}
     errors: list[ErrorModel] = []
+
 
 # カスタム例外
 class APIException(Exception):
@@ -71,6 +74,7 @@ class APIException(Exception):
         self.message = message
         self.field = field
 
+
 # エラーハンドラー
 @app.exception_handler(APIException)
 async def api_exception_handler(request, exc):
@@ -78,28 +82,23 @@ async def api_exception_handler(request, exc):
         status_code=exc.status_code,
         content={
             "data": {},
-            "errors": [{
-                "code": exc.code,
-                "message": exc.message,
-                "field": exc.field
-            }]
-        }
+            "errors": [{"code": exc.code, "message": exc.message, "field": exc.field}],
+        },
     )
+
 
 # Bearer認証
 auth_scheme = HTTPBearer(auto_error=True)
 
-def create_token(expire_minutes: int, username: str) -> str:
-    expire = datetime.utcnow() + timedelta(minutes=expire_minutes)
+
+def create_token(expire_hours: int, username: str) -> str:
+    expire = datetime.utcnow() + timedelta(hours=expire_hours)
     return jwt.encode(
-        {
-            "sub": username,
-            "exp": expire,
-            "iat": datetime.utcnow()
-        },
+        {"sub": username, "exp": expire, "iat": datetime.utcnow()},
         SECRET_KEY,
-        algorithm=ALGORITHM
+        algorithm=ALGORITHM,
     )
+
 
 def verify_token(token: str) -> dict:
     try:
@@ -109,46 +108,84 @@ def verify_token(token: str) -> dict:
             status_code=401,
             code=ErrorCode.TOKEN_EXPIRED,
             message="Token has expired",
-            field="token"
+            field="token",
         )
     except jwt.InvalidTokenError:
         raise APIException(
             status_code=401,
             code=ErrorCode.INVALID_TOKEN,
             message="Invalid token provided",
-            field="token"
+            field="token",
         )
 
-@router_v1_auth.post("/token/generate")
+
+@router_v1_auth.post("/token/generate", summary="Tokenを生成する。")
 async def generate_token(
-    token_request: TokenRequest,
-    credentials = Security(auth_scheme)
+    token_request: TokenRequest, credentials=Security(auth_scheme)
 ):
-    if credentials.credentials != MASTER_KEY:
+    if credentials.credentials != MASTER_TOKEN:
         raise APIException(
             status_code=403,
             code=ErrorCode.INVALID_MASTER_KEY,
             message="Invalid master token",
-            field="authorization"
+            field="authorization",
         )
 
-    token = create_token(
-        token_request.expire_minutes,
-        token_request.username
-    )
+    token = create_token(token_request.expire_hours, token_request.username)
     return ResponseModel(data={"token": token})
 
-@router_v1_auth.post("/token/decode")
-async def decode_token(token_request: TokenDecodeRequest):
-    payload = verify_token(token_request.token)
-    return ResponseModel(data={
-        "sub": payload["sub"],
-        "exp": datetime.fromtimestamp(payload["exp"]).isoformat(),
-        "iat": datetime.fromtimestamp(payload["iat"]).isoformat()
-    })
 
-@router_v1_auth.get("/token/protected")
-async def protected(credentials = Security(auth_scheme)):
+@router_v1_auth.post("/token/decode", summary="Tokenをデコードする。")
+async def decode_token(
+    token_request: TokenDecodeRequest, credentials=Security(auth_scheme)
+):
+    """
+    - `MASTER_TOKEN` を持つリクエストのみアクセス可能。
+    - トークンが期限切れ (`exp` クレームが過去) であってもデコードを実行する。
+    - トークンが不正な場合はエラーを返す。
+    """
+    if credentials.credentials != MASTER_TOKEN:
+        raise APIException(
+            status_code=403,
+            code=ErrorCode.INVALID_MASTER_KEY,
+            message="Invalid master token",
+            field="authorization",
+        )
+
+    try:
+        payload = jwt.decode(
+            token_request.token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+            options={"verify_exp": False},
+        )
+    except jwt.InvalidTokenError:
+        raise APIException(
+            status_code=401,
+            code=ErrorCode.INVALID_TOKEN,
+            message="Invalid token provided",
+            field="token",
+        )
+
+    return ResponseModel(
+        data={
+            "sub": payload.get("sub"),
+            "exp": (
+                datetime.fromtimestamp(payload["exp"]).isoformat()
+                if "exp" in payload
+                else "N/A"
+            ),
+            "iat": (
+                datetime.fromtimestamp(payload["iat"]).isoformat()
+                if "iat" in payload
+                else "N/A"
+            ),
+        }
+    )
+
+
+@router_v1_auth.get("/token/test", summary="Tokenをテストする。")
+async def protected(credentials=Security(auth_scheme)):
     verify_token(credentials.credentials)
     return ResponseModel(data={"message": "You have access!"})
 
@@ -158,4 +195,5 @@ app.include_router(router_v1_auth)
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

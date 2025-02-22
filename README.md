@@ -3,4 +3,7 @@
 ## Todo
 
 [] logging
+
 [] nginx
+
+[] エラーハンドリング
