@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from typing import Optional
 import jwt
 from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -9,11 +8,8 @@ from app.core.config import settings
 security = HTTPBearer()
 
 
-def create_token(username: str, expires_delta: Optional[timedelta] = None) -> str:
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(hours=settings.ACCESS_TOKEN_EXPIRE_HOURS)
+def create_token(username: str, expires_delta: timedelta) -> str:
+    expire = datetime.utcnow() + expires_delta
 
     to_encode = {
         "sub": username,

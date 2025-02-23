@@ -6,10 +6,6 @@ load_dotenv()
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "FastAPI-JWT-Sample"
-    PROJECT_DESCRIPTION: str = "FastAPI sample with JWT authentication"
-    VERSION: str = "0.1.0"
-    API_V1_STR: str = "/api/v1"
     BASE_URL: str = "/api"
 
     # Auth

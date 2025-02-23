@@ -51,7 +51,7 @@ async def decode_token(
 ):
     """
     - `MASTER_TOKEN` で認証してください。
-    - トークンが期限切れであっても実行します。
+    - トークンが期限切れでも実行します。
     """
     try:
         payload = jwt.decode(

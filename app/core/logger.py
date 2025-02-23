@@ -40,7 +40,7 @@ class CustomLogger:
         self.logger.addHandler(console_handler)
         self.logger.addHandler(file_handler)
 
-        self.logger.setLevel("DEBUG")
+        self.logger.setLevel(logging.DEBUG)
 
     def get_logger(self) -> Logger:
         return self.logger

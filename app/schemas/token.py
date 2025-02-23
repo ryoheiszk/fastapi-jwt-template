@@ -1,12 +1,12 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.base import BaseResponse
 
 
 class TokenRequest(BaseModel):
-    expire_hours: int = 8760
-    username: str = "user"
+    expire_hours: int = Field(..., example=8760)
+    username: str = Field(..., example="user")
 
 
 class TokenDecodeRequest(BaseModel):
