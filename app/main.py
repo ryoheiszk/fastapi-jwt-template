@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.core.logger import logger
 from app.api.v1_router import router as api_v1_router
 
 app = FastAPI(
@@ -11,6 +12,9 @@ app = FastAPI(
     redoc_url=f"{settings.BASE_URL}/redoc",
     openapi_url=f"{settings.BASE_URL}/openapi.json",
 )
+
+# アプリケーション起動時のログ
+logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION}")
 
 app.add_middleware(
     CORSMiddleware,

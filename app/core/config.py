@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     MASTER_TOKEN: str = "master_token"  # 本番環境では環境変数から取得すべき
     ACCESS_TOKEN_EXPIRE_HOURS: int = 8760  # デフォルト1年
 
+    # Logging
+    CONSOLE_LOG_LEVEL: str = "INFO"
+    FILE_LOG_LEVEL: str = "DEBUG"
+    LOG_DIR: str = "./logs"
+    LOG_FILENAME: str = "app.log"
+
     class Config:
         case_sensitive = True
 

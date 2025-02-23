@@ -1,4 +1,12 @@
+# Python
 __pycache__
 .venv
+
+# Environment variables
+.env
+
+# Logging
+logs/
+*.log
 
 !.gitkeep
