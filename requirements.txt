@@ -1,4 +1,6 @@
 fastapi
 pydantic
-pyjwt
+pydantic-settings
 uvicorn
+python-multipart
+PyJWT
