@@ -1,19 +1,23 @@
 from pydantic_settings import BaseSettings
-from functools import lru_cache
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "FastAPI Sample"
+    PROJECT_NAME: str = "FastAPI-JWT-Sample"
     PROJECT_DESCRIPTION: str = "FastAPI sample with JWT authentication"
     VERSION: str = "0.1.0"
     API_V1_STR: str = "/api/v1"
     BASE_URL: str = "/api"
 
-    # Security
-    SECRET_KEY: str = "mysecretkey"  # 本番環境では環境変数から取得すべき
+    # Auth
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
-    MASTER_TOKEN: str = "master_token"  # 本番環境では環境変数から取得すべき
-    ACCESS_TOKEN_EXPIRE_HOURS: int = 8760  # デフォルト1年
+    MASTER_TOKEN: str
+
+    ACCESS_TOKEN_EXPIRE_HOURS: int = 8760
 
     # Logging
     CONSOLE_LOG_LEVEL: str = "INFO"
@@ -25,8 +29,4 @@ class Settings(BaseSettings):
         case_sensitive = True
 
 
-@lru_cache()
-def get_settings() -> Settings:
-    return Settings()
-
-settings = get_settings()
+settings = Settings()

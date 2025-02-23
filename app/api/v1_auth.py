@@ -8,6 +8,7 @@ from app.utils.v1_auth import (
     create_token
 )
 from app.core.config import settings
+from app.core.logger import logger
 from app.schemas.base import BaseResponse, ErrorResponse
 from app.schemas.token import (
     TokenRequest,
@@ -37,6 +38,7 @@ async def generate_token(
             username=token_request.username,
             expires_delta=expires_delta
         )
+        logger.debug(f"Token generated: {token_request.expire_hours}hours, {token}")
         return TokenResponse(data={"token": token})
     except Exception as e:
         return TokenResponse(errors=[ErrorResponse(message=str(e))])
