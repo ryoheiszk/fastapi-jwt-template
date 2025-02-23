@@ -17,3 +17,7 @@ cp .env.example .env
 ```bash
 python -m app.main
 ```
+
+## ToDo
+
+- Tests

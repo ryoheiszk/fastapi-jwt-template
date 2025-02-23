@@ -1,20 +1,18 @@
 from datetime import timedelta, datetime
 from fastapi import APIRouter, Depends
-import jwt
 
 from app.utils.v1_auth import (
     verify_token,
     verify_master_token,
-    create_token
+    create_token,
+    decode_token_with_payload
 )
-from app.core.config import settings
 from app.core.logger import logger
 from app.schemas.base import BaseResponse, ErrorResponse
 from app.schemas.token import (
     TokenRequest,
     TokenResponse,
-    TokenDecodeRequest,
-    TokenPayload,
+    TokenDecodeRequest
 )
 
 router = APIRouter()
@@ -54,29 +52,17 @@ async def decode_token(
     - トークンが期限切れでも実行します。
     """
     try:
-        payload = jwt.decode(
-            token_request.token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM],
-            options={"verify_exp": False}
-        )
-        if "exp" not in payload or "iat" not in payload:
-            raise jwt.InvalidTokenError("Token missing required fields")
-
-        token_payload = TokenPayload(
-            sub=payload["sub"],
-            iat=datetime.fromtimestamp(payload["iat"]),
-            exp=datetime.fromtimestamp(payload["exp"])
-        )
+        token_payload = decode_token_with_payload(token_request.token, verify_exp=False)
         return BaseResponse(data=token_payload.model_dump())
-    except jwt.InvalidTokenError as e:
-        return BaseResponse(errors=[ErrorResponse(message=str(e))])
     except Exception as e:
         return BaseResponse(errors=[ErrorResponse(message=str(e))])
 
 
 @router.get("/token/test", response_model=BaseResponse, summary="Tokenをテストする。")
 async def test_token(payload: dict = Depends(verify_token)):
+    """
+    - 生成したトークンで認証してください。
+    """
     try:
         return BaseResponse(data={
             "message": "You have access!",

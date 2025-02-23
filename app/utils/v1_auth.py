@@ -4,6 +4,7 @@ from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.core.config import settings
+from app.schemas.token import TokenPayload
 
 security = HTTPBearer()
 
@@ -55,3 +56,23 @@ def verify_master_token(credentials: HTTPAuthorizationCredentials = Security(sec
             detail="Invalid master token",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+def decode_token_with_payload(token: str, verify_exp: bool = False) -> TokenPayload:
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+            options={"verify_exp": verify_exp}
+        )
+        if "exp" not in payload or "iat" not in payload:
+            raise jwt.InvalidTokenError("Token missing required fields")
+
+        return TokenPayload(
+            sub=payload["sub"],
+            iat=datetime.fromtimestamp(payload["iat"]),
+            exp=datetime.fromtimestamp(payload["exp"])
+        )
+    except jwt.InvalidTokenError as e:
+        raise jwt.InvalidTokenError(str(e))
