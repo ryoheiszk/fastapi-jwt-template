@@ -9,7 +9,20 @@ from app.schemas.token import TokenPayload
 security = HTTPBearer()
 
 
-def create_token(username: str, expires_delta: timedelta) -> str:
+def create_token(username: str, expires_delta: timedelta = None) -> str:
+    """
+    指定されたユーザー名とオプションの有効期限でJWTトークンを生成します。
+
+    Args:
+        username: トークンに含めるユーザー名
+        expires_delta: トークンの有効期限（指定がない場合はデフォルト値を使用）
+
+    Returns:
+        生成されたJWTトークン
+    """
+    if expires_delta is None:
+        expires_delta = timedelta(hours=settings.ACCESS_TOKEN_EXPIRE_HOURS)
+
     expire = datetime.utcnow() + expires_delta
 
     to_encode = {
@@ -27,6 +40,18 @@ def create_token(username: str, expires_delta: timedelta) -> str:
 
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)) -> dict:
+    """
+    JWTトークンを検証し、ペイロードを返します。
+
+    Args:
+        credentials: HTTPAuthorizationCredentials
+
+    Returns:
+        検証されたトークンのペイロード
+
+    Raises:
+        HTTPException: トークンが無効または期限切れの場合
+    """
     try:
         token = credentials.credentials
         payload = jwt.decode(
@@ -50,6 +75,15 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Security(security))
 
 
 def verify_master_token(credentials: HTTPAuthorizationCredentials = Security(security)) -> None:
+    """
+    マスタートークンを検証します。
+
+    Args:
+        credentials: HTTPAuthorizationCredentials
+
+    Raises:
+        HTTPException: マスタートークンが無効の場合
+    """
     if credentials.credentials != settings.MASTER_TOKEN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -58,7 +92,20 @@ def verify_master_token(credentials: HTTPAuthorizationCredentials = Security(sec
         )
 
 
-def decode_token_with_payload(token: str, verify_exp: bool = False) -> TokenPayload:
+def decode_token_with_payload(token: str, verify_exp: bool = True) -> TokenPayload:
+    """
+    JWTトークンをデコードし、TokenPayloadオブジェクトを返します。
+
+    Args:
+        token: デコードするJWTトークン
+        verify_exp: 有効期限を検証するかどうか
+
+    Returns:
+        TokenPayloadオブジェクト
+
+    Raises:
+        jwt.InvalidTokenError: トークンが無効の場合
+    """
     try:
         payload = jwt.decode(
             token,
