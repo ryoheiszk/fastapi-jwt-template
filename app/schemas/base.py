@@ -1,11 +1,12 @@
-from typing import List
+from typing import List, Dict, Any
 from pydantic import BaseModel
 
 
 class ErrorResponse(BaseModel):
-    message: str
+    code: str
+    detail: str
 
 
 class BaseResponse(BaseModel):
-    data: dict = {}
+    data: Dict[str, Any] = {}
     errors: List[ErrorResponse] = []

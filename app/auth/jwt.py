@@ -4,6 +4,7 @@ from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.core.config import settings
+from app.core.logger import logger
 from app.schemas.token import TokenPayload
 
 security = HTTPBearer()
@@ -60,13 +61,15 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Security(security))
             algorithms=[settings.ALGORITHM]
         )
         return payload
-    except jwt.ExpiredSignatureError:
+    except jwt.ExpiredSignatureError as e:
+        logger.error(f"Token has expired: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as e:
+        logger.error(f"Invalid token: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
@@ -85,6 +88,7 @@ def verify_master_token(credentials: HTTPAuthorizationCredentials = Security(sec
         HTTPException: マスタートークンが無効の場合
     """
     if credentials.credentials != settings.MASTER_TOKEN:
+        logger.error(f"Invalid master token")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid master token",
@@ -122,4 +126,5 @@ def decode_token_with_payload(token: str, verify_exp: bool = True) -> TokenPaylo
             exp=datetime.fromtimestamp(payload["exp"])
         )
     except jwt.InvalidTokenError as e:
+        logger.error(f"Invalid token: {str(e)}")
         raise jwt.InvalidTokenError(str(e))

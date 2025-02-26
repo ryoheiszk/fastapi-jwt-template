@@ -8,7 +8,7 @@ from app.auth.jwt import (
     decode_token_with_payload
 )
 from app.core.logger import logger
-from app.schemas.base import BaseResponse, ErrorResponse
+from app.schemas.base import BaseResponse
 from app.schemas.token import (
     TokenRequest,
     TokenResponse,
@@ -65,7 +65,7 @@ async def decode_token(
     except Exception as e:
         logger.error(f"Token decode failed: {str(e)}")
         raise HTTPException(
-            status_code=400,
+            status_code=500,
             detail=f"Token decode failed: {str(e)}"
         )
 
