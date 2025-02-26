@@ -34,7 +34,7 @@ def create_token(username: str, expires_delta: timedelta = None) -> str:
 
     encoded_jwt = jwt.encode(
         to_encode,
-        settings.SECRET_KEY,
+        settings.JWT_SECRET,
         algorithm=settings.ALGORITHM
     )
     return encoded_jwt
@@ -57,7 +57,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Security(security))
         token = credentials.credentials
         payload = jwt.decode(
             token,
-            settings.SECRET_KEY,
+            settings.JWT_SECRET,
             algorithms=[settings.ALGORITHM]
         )
         return payload
@@ -77,7 +77,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Security(security))
         )
 
 
-def verify_master_token(credentials: HTTPAuthorizationCredentials = Security(security)) -> None:
+def verify_master_key(credentials: HTTPAuthorizationCredentials = Security(security)) -> None:
     """
     マスタートークンを検証します。
 
@@ -87,7 +87,7 @@ def verify_master_token(credentials: HTTPAuthorizationCredentials = Security(sec
     Raises:
         HTTPException: マスタートークンが無効の場合
     """
-    if credentials.credentials != settings.MASTER_TOKEN:
+    if credentials.credentials != settings.MASTER_KEY:
         logger.error(f"Invalid master token")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -113,7 +113,7 @@ def decode_token_with_payload(token: str, verify_exp: bool = True) -> TokenPaylo
     try:
         payload = jwt.decode(
             token,
-            settings.SECRET_KEY,
+            settings.JWT_SECRET,
             algorithms=[settings.ALGORITHM],
             options={"verify_exp": verify_exp}
         )

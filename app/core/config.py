@@ -1,3 +1,4 @@
+import os
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 
@@ -12,11 +13,12 @@ class Settings(BaseSettings):
     """
     # API設定
     BASE_URL: str = "/api"
+    PORT: int = int(os.getenv("PORT"))
 
     # 認証設定
-    SECRET_KEY: str
+    JWT_SECRET: str = os.getenv("JWT_SECRET")
     ALGORITHM: str = "HS256"
-    MASTER_TOKEN: str
+    MASTER_KEY: str = os.getenv("MASTER_KEY")
     ACCESS_TOKEN_EXPIRE_HOURS: int = 8760
 
     # ロギング設定

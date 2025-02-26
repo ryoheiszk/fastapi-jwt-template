@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth.jwt import (
     verify_token,
-    verify_master_token,
+    verify_master_key,
     create_token,
     decode_token_with_payload
 )
@@ -21,12 +21,12 @@ router = APIRouter()
 @router.post("/generate", response_model=TokenResponse, summary="JWTトークンを生成する。")
 async def generate_token(
     token_request: TokenRequest,
-    _: None = Depends(verify_master_token)
+    _: None = Depends(verify_master_key)
 ):
     """
     マスタートークンで認証してJWTトークンを生成します。
 
-    - `MASTER_TOKEN` で認証してください。
+    - `MASTER_KEY` で認証してください。
     """
     try:
         expires_delta = (
@@ -51,12 +51,12 @@ async def generate_token(
 @router.post("/decode", response_model=BaseResponse, summary="JWTトークンをデコードする。")
 async def decode_token(
     token_request: TokenDecodeRequest,
-    _: None = Depends(verify_master_token)
+    _: None = Depends(verify_master_key)
 ):
     """
     マスタートークンで認証してJWTトークンをデコードします。
 
-    - `MASTER_TOKEN` で認証してください。
+    - `MASTER_KEY` で認証してください。
     - トークンが期限切れでも実行します。
     """
     try:
